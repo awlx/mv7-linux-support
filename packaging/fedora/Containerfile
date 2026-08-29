@@ -1,0 +1,12 @@
+FROM fedora:latest
+
+RUN dnf install -y \
+      desktop-file-utils \
+      golang \
+      rpm-build \
+      rpmlint \
+      systemd-rpm-macros \
+    && dnf clean all
+
+WORKDIR /src
+CMD ["./packaging/fedora/build-rpm.sh"]

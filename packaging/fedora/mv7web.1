@@ -1,0 +1,43 @@
+.TH MV7WEB 1 "August 28, 2026" "shure-mv7 0.1.8" "User Commands"
+.SH NAME
+mv7web \- unofficial Linux control for a Shure MV7+ microphone
+.SH SYNOPSIS
+.B mv7web
+.RB [ \-addr
+.IR address ]
+.RB [ \-open ]
+.SH DESCRIPTION
+.B mv7web
+opens the Shure MV7+ vendor HID interface and serves an embedded web console.
+The console controls gain, DSP, monitoring, reverb, mute, and LED settings.
+This independent project is not affiliated with, endorsed by, or supported by
+Shure Incorporated.
+.PP
+The default address is
+.BR 127.0.0.1:8090 .
+The server provides no authentication or TLS and should normally remain bound
+to the loopback interface.
+.PP
+Remote control is supported, for example when the microphone is connected to
+a Linux streamer PC. Prefer an SSH tunnel to the default loopback listener. A
+non-loopback listen address may be used on a trusted private network when host
+firewall rules restrict access. Never expose the server directly to the
+internet.
+.SH OPTIONS
+.TP
+.BI \-addr " address"
+Set the HTTP listen address. The default is 127.0.0.1:8090.
+.TP
+.B \-open
+Stop an older mv7web process owned by the current user, then open the console
+in the default browser with xdg-open. This ensures desktop launches use the
+currently installed binary after an upgrade.
+.SH FILES
+.TP
+.I /usr/lib/udev/rules.d/62-shure-mv7plus.rules
+Grants the active desktop user access to the Shure MV7+ hidraw interface.
+.SH HARDWARE
+Shure MV7+ USB devices with vendor ID 14ed and product ID 1019 are supported.
+.SH SEE ALSO
+.BR xdg-open (1),
+.BR udev (7)

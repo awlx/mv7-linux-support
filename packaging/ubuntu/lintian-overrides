@@ -1,0 +1,4 @@
+# mv7web is deliberately a self-contained pure-Go executable.
+shure-mv7: statically-linked-binary [usr/bin/mv7web]
+# This package has no Debian bug to close on initial upload.
+shure-mv7: initial-upload-closes-no-bugs [usr/share/doc/shure-mv7/changelog.Debian.gz:*]

@@ -1,0 +1,11 @@
+FROM golang:1.26-bookworm
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      desktop-file-utils \
+      dpkg-dev \
+      lintian \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+CMD ["./packaging/ubuntu/build-deb.sh"]

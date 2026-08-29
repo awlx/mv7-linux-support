@@ -1,0 +1,5 @@
+# Go produces a self-contained executable; the application has no C library API.
+addFilter(r"statically-linked-binary /usr/bin/mv7web")
+
+# Fedora's canonical udev rules directory contains policy files, not binaries.
+addFilter(r"only-non-binary-in-usr-lib")

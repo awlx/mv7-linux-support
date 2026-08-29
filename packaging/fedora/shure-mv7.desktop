@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Shure MV7+ Console
+Comment=Unofficial Linux control for a Shure MV7+ microphone
+Exec=mv7web -open
+TryExec=mv7web
+Icon=audio-input-microphone
+Terminal=false
+Categories=AudioVideo;Audio;
+StartupNotify=true

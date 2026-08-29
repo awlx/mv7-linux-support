@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MV7+ Console</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+        </svg>
+      </div>
+      <div>
+        <h1>MV7+ Console</h1>
+        <p class="sub">Independent Linux USB control</p>
+      </div>
+    </div>
+    <div class="status">
+      <span class="dot" id="dot"></span>
+      <span id="connlabel">connecting…</span>
+      <span class="badge" id="fw"></span>
+      <span class="badge" id="serial"></span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Mute / gain hero -->
+    <section class="hero card">
+      <div class="hero-left">
+        <button id="mutebtn" class="mute-btn" aria-label="Mute">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+          <span id="mutelabel">Mute</span>
+        </button>
+        <div class="hero-meta">
+          <span class="lbl">Input</span>
+          <div class="seg" id="modeseg">
+            <button data-mode="0" class="seg-btn">Manual</button>
+            <button data-mode="1" class="seg-btn">Auto Level</button>
+          </div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="gain-wrap">
+          <div class="gain-head">
+            <span class="lbl">Gain</span>
+            <label class="gain-entry"><input type="number" id="gaininput" min="0" max="36" step="0.5" value="0" required aria-label="Gain in decibels"><span>dB</span></label>
+          </div>
+          <input type="range" id="gain" min="0" max="36" step="0.5" value="0">
+          <div class="gain-scale"><span>0</span><span>36 dB</span></div>
+          <div class="row gain-lock-row"><span class="lbl">Gain lock</span>
+            <label class="switch"><input type="checkbox" id="gainlocked"><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DSP grid -->
+    <section class="grid">
+      <div class="card">
+        <h2>DSP</h2>
+        <div class="row"><span class="lbl">High-pass filter</span>
+          <select id="hpf">
+            <option value="0">Off</option>
+            <option value="1">75 Hz</option>
+            <option value="2">150 Hz</option>
+          </select>
+        </div>
+        <div class="row"><span class="lbl">Limiter</span>
+          <label class="switch"><input type="checkbox" id="limiter"><span class="slider"></span></label>
+        </div>
+        <div class="row"><span class="lbl">Compressor</span>
+          <select id="compressor">
+            <option value="0">Off</option>
+            <option value="1">Light</option>
+            <option value="2">Medium</option>
+            <option value="3">Heavy</option>
+          </select>
+        </div>
+        <div class="row"><span class="lbl">Denoiser</span>
+          <label class="switch"><input type="checkbox" id="denoiser"><span class="slider"></span></label>
+        </div>
+        <div class="row"><span class="lbl">Popper stopper</span>
+          <label class="switch"><input type="checkbox" id="popper"><span class="slider"></span></label>
+        </div>
+        <div class="row"><span class="lbl">Mute button</span>
+          <label class="switch"><input type="checkbox" id="mutebtnactive"><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Tone</h2>
+        <div class="tone-wrap">
+          <div class="tone-head">
+            <span>Dark</span>
+            <span class="tone-val" id="toneval">Natural</span>
+            <span>Bright</span>
+          </div>
+          <input type="range" id="tone" min="-100" max="100" step="10" value="0">
+        </div>
+        <h2>Mix</h2>
+        <div class="row"><span class="lbl">Mic monitor</span>
+          <span class="mix-val" id="micmixval">—</span>
+        </div>
+        <input type="range" id="micmix" min="0" max="100" step="1" value="0">
+        <div class="row"><span class="lbl">Playback</span>
+          <span class="mix-val" id="playmixval">—</span>
+        </div>
+        <input type="range" id="playmix" min="0" max="100" step="1" value="0">
+      </div>
+
+      <div class="card">
+        <h2>Reverb</h2>
+        <div class="row"><span class="lbl">Output</span>
+          <label class="switch"><input type="checkbox" id="reverbout"><span class="slider"></span></label>
+        </div>
+        <div class="row"><span class="lbl">Monitor</span>
+          <label class="switch"><input type="checkbox" id="reverbmon"><span class="slider"></span></label>
+        </div>
+        <div class="row"><span class="lbl">Type</span>
+          <select id="reverbtype">
+            <option value="0">Plate</option>
+            <option value="1">Hall</option>
+            <option value="2">Studio</option>
+          </select>
+        </div>
+        <div class="row"><span class="lbl">Intensity</span>
+          <span class="mix-val" id="reverbintval">—</span>
+        </div>
+        <input type="range" id="reverbint" min="0" max="100" step="1" value="0">
+      </div>
+    </section>
+
+    <!-- LED panel -->
+    <section class="card led-card">
+      <h2>LED Panel</h2>
+      <div class="led-row">
+        <div class="row"><span class="lbl">Behavior</span>
+          <select id="ledbehavior">
+            <option value="0">Live</option>
+            <option value="1">Pulsing</option>
+            <option value="2">Solid</option>
+          </select>
+        </div>
+        <div class="row"><span class="lbl">Brightness</span>
+          <select id="ledbrightness">
+            <option value="3">Low</option>
+            <option value="4">Medium</option>
+            <option value="5">High</option>
+            <option value="6">Max</option>
+          </select>
+        </div>
+        <div class="row"><span class="lbl">Live theme</span>
+          <select id="ledlivetheme">
+            <option value="0">Default</option>
+            <option value="1">Seaside</option>
+            <option value="2">Space</option>
+            <option value="3">Fruity</option>
+            <option value="4">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="led-row">
+        <div class="row"><span class="lbl">Solid theme</span>
+          <select id="ledsolidtheme">
+            <option value="0">Shure</option>
+            <option value="1">Custom</option>
+          </select>
+        </div>
+        <div class="row"><span class="lbl">Pulsing theme</span>
+          <select id="ledpulsingtheme">
+            <option value="0">Shure</option>
+            <option value="1">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="led-colors">
+        <div class="color-field">
+          <span class="lbl">Solid color</span>
+          <input type="color" id="ledsolidcolor" value="#b2ff33">
+        </div>
+        <div class="color-field">
+          <span class="lbl">Pulsing color</span>
+          <input type="color" id="ledpulsingcolor" value="#103ffb">
+        </div>
+        <div class="color-field">
+          <span class="lbl">Live edge</span>
+          <input type="color" id="ledliveedge" value="#ffffff">
+        </div>
+        <div class="color-field">
+          <span class="lbl">Live middle</span>
+          <input type="color" id="ledlivemiddle" value="#1f1f1f">
+        </div>
+        <div class="color-field">
+          <span class="lbl">Live interior</span>
+          <input type="color" id="ledliveinterior" value="#000000">
+        </div>
+      </div>
+    </section>
+
+    <section class="card danger-card">
+      <h2>Danger zone</h2>
+      <button id="factoryreset" class="danger">Factory reset</button>
+      <p class="hint">Resets all settings to factory defaults. The device will reconnect after a few seconds.</p>
+    </section>
+    <p class="project-disclaimer">Unofficial independent project. Not affiliated with, endorsed by, or supported by Shure Incorporated.</p>
+  </main>
+</div>
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
