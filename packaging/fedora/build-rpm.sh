@@ -44,6 +44,7 @@ if [[ -n "${RPM_TARGET:-}" ]]; then
 fi
 
 rpmbuild \
+  --quiet \
   --define "_topdir ${top_dir}" \
   "${target_args[@]}" \
   -ba "${source_dir}/packaging/fedora/${name}.spec"

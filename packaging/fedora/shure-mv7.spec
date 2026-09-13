@@ -65,6 +65,12 @@ go test ./...
 %{_udevrulesdir}/62-shure-mv7plus.rules
 %{_mandir}/man1/mv7web.1*
 
+%post
+%udev_post
+
+%preun
+%udev_preun
+
 %changelog
 * Fri Aug 28 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.1.8-1
 - Support manual gain in 0.5 dB increments
