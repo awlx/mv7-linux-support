@@ -10,10 +10,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"os/exec"
-	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -25,13 +22,9 @@ import (
 
 func main() {
 	addr := flag.String("addr", "127.0.0.1:8090", "listen address")
-	openUI := flag.Bool("open", false, "open the web console in the default browser")
+	openUI := flag.Bool("open", false, "open the web console, reusing a running instance")
 	flag.Parse()
 	url := "http://" + *addr
-	if *openUI {
-		stopOtherInstances()
-	}
-
 	listener, err := net.Listen("tcp", *addr)
 	if err != nil {
 		if *openUI && errors.Is(err, syscall.EADDRINUSE) {
@@ -75,35 +68,5 @@ func main() {
 func openBrowser(url string) {
 	if err := exec.Command("xdg-open", url).Start(); err != nil {
 		log.Printf("cannot open browser: %v", err)
-	}
-}
-
-func stopOtherInstances() {
-	output, err := exec.Command(
-		"pgrep", "-u", strconv.Itoa(os.Geteuid()), "-x", "mv7web",
-	).Output()
-	if err != nil {
-		return
-	}
-	var pids []int
-	for _, field := range strings.Fields(string(output)) {
-		pid, err := strconv.Atoi(field)
-		if err == nil && pid != os.Getpid() {
-			_ = syscall.Kill(pid, syscall.SIGTERM)
-			pids = append(pids, pid)
-		}
-	}
-	deadline := time.Now().Add(2 * time.Second)
-	for len(pids) > 0 && time.Now().Before(deadline) {
-		remaining := pids[:0]
-		for _, pid := range pids {
-			if err := syscall.Kill(pid, 0); !errors.Is(err, syscall.ESRCH) {
-				remaining = append(remaining, pid)
-			}
-		}
-		pids = remaining
-		if len(pids) > 0 {
-			time.Sleep(20 * time.Millisecond)
-		}
 	}
 }

@@ -1,0 +1,9 @@
+{
+  "uuid": "shure-mv7plus@shure-mv7.local",
+  "name": "MV7+ Control",
+  "description": "Hardware mute status and quick controls for the MV7+ Go daemon. Unofficial community project.",
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "settings-schema": "org.gnome.shell.extensions.shure-mv7plus",
+  "url": "https://github.com/awlx/mv7-linux-support",
+  "version": 2
+}

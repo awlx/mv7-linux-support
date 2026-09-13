@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=MV7+ Control
+Comment=Unofficial native controls for a Shure MV7+ microphone
+Exec=mv7-native
+Icon=io.github.awlx.MV7
+Terminal=false
+Categories=AudioVideo;Audio;
+Keywords=Microphone;Shure;MV7;Mute;
+StartupNotify=true
+DBusActivatable=false

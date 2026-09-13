@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="io.github.awlx.MV7" path="/io/github/awlx/MV7/">
+    <key name="meter-enabled" type="b">
+      <default>true</default>
+      <summary>Show live MV7+ input level</summary>
+      <description>Subscribe to shared audio metering while the application is open. Audio is processed in memory, never recorded.</description>
+    </key>
+    <key name="daemon-url" type="s">
+      <default>'http://127.0.0.1:8090'</default>
+      <summary>MV7+ daemon URL</summary>
+      <description>Loopback HTTP or HTTPS address of mv7web. Remote microphones can use an SSH tunnel.</description>
+    </key>
+  </schema>
+</schemalist>

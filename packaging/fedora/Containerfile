@@ -6,6 +6,7 @@ RUN dnf install -y \
       rpm-build \
       rpmlint \
       systemd-rpm-macros \
+      glib2 \
     && dnf clean all
 
 WORKDIR /src

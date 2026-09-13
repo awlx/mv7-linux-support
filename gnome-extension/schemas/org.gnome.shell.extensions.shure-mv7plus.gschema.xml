@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.shure-mv7plus" path="/org/gnome/shell/extensions/shure-mv7plus/">
+    <key name="show-level-numbers" type="b">
+      <default>false</default>
+      <summary>Show numeric input level beside the panel icon</summary>
+      <description>The icon fills with the live input level regardless of this setting. Numbers remain visible in the menu and native app.</description>
+    </key>
+    <key name="meter-enabled" type="b">
+      <default>true</default>
+      <summary>Show live MV7+ input level</summary>
+      <description>Subscribe to shared audio metering while the extension is enabled. The daemon processes audio in memory without recording it.</description>
+    </key>
+    <key name="daemon-url" type="s">
+      <default>'http://127.0.0.1:8090'</default>
+      <summary>MV7+ daemon URL</summary>
+      <description>Loopback HTTP or HTTPS address of the existing Go daemon.</description>
+    </key>
+  </schema>
+</schemalist>

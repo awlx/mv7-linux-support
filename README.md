@@ -1,305 +1,253 @@
-# Shure MV7+ Web Console
+# Shure MV7+ Linux Control
 
-An independent, community-developed Linux application for controlling a Shure
-MV7+ microphone without requiring the vendor's desktop software. It talks
-directly to the microphone's vendor HID interface and serves an embedded
-browser interface over HTTP and WebSocket.
+Control a **Shure MV7+** from a native GNOME app, a GNOME Shell panel extension,
+or an optional web interface. All three use the same local Go daemon, `mv7web`.
 
-> [!IMPORTANT]
-> This is an unofficial independent project. It is not affiliated with,
-> authorized, sponsored, endorsed, or supported by Shure Incorporated in any
-> way. Shure and MV7+ are trademarks of Shure Incorporated and are used here
-> only to identify compatible hardware.
+Supports the MV7+ (`14ed:1019`), **not the original MV7**. This is an unofficial
+community project, not affiliated with or supported by Shure Incorporated.
+Shure and MV7+ are trademarks of Shure Incorporated.
 
-The server listens on `127.0.0.1:8090` by default, keeping the control
-interface available only on the local machine. It can also be configured for
-remote control, for example to adjust a microphone connected to a Linux
-streamer PC from another computer.
+## Features
 
-![MV7+ Web Console controls](docs/controls.png)
+- Gain in 0.5 dB steps, gain lock, hardware mute, and Auto Level.
+- Filters, compressor, limiter, denoiser, Popper Stopper, tone, monitor mix,
+  reverb, LED settings, and factory reset.
+- A panel microphone icon that fills with input level and shows hardware mute.
+  Numeric panel levels are optional; the menu and native app show peak/RMS dBFS.
 
-## Supported controls
+![MV7+ web interface](docs/controls.png)
 
-- Gain, gain lock, mute, Manual mode, and Auto Level mode
-- High-pass filter, limiter, compressor, denoiser, and Popper Stopper
-- Tone and monitor/playback mix
-- Reverb output, monitoring, type, and intensity
-- LED behavior, brightness, themes, and custom colors
-- Physical mute-button enable/disable
-- Factory reset
+## Requirements
 
-## Hardware and protocol
+- Linux and a Shure MV7+ connected over USB.
+- Native app: GJS, GTK 4.10+, libadwaita 1.4+, and libsoup 3
+  (Ubuntu 24.04+, Debian 13+, or a recent Fedora).
+- Panel extension: GNOME Shell 45-50. The native app also works without Shell.
+- Live metering: PulseAudio or PipeWire's PulseAudio service, plus
+  `pulseaudio-utils`.
+- Building from source: Go 1.26.6 or newer.
 
-This application targets the Shure MV7+ with USB vendor/product ID
-`14ed:1019`. It does not use the older MV7 ASCII protocol. The MV7+ uses a
-binary ADT/DMP protocol over 64-byte HID reports.
+## Install
 
-The protocol implementation is based on the GPL-3.0-licensed packet captures,
-documentation, and implementation in
-[Humblemonk/shurectl](https://github.com/Humblemonk/shurectl). This project is
-distributed under the GNU General Public License, version 3 only.
+The RPM and DEB include the daemon, native app, Shell extension, udev rule,
+and optional **user** service. Installation does **not** enable the service or
+extension. Use `dnf` or `apt` with recommended dependencies enabled to install
+the desktop and metering dependencies too.
 
-## License
-
-Copyright (C) 2026 Annika Wickert. Licensed under GPL-3.0-only. See
-[LICENSE](LICENSE).
-
-## Installation
-
-### Fedora RPM
-
-Build and install the RPM on Fedora:
-
-```bash
-sudo dnf install golang rpm-build desktop-file-utils
-./packaging/fedora/build-rpm.sh
-sudo dnf install ./dist/RPMS/shure-mv7-*.rpm
-```
-
-The package installs the `mv7web` binary, the **Shure MV7+ Console** desktop
-launcher, and a udev rule granting the active desktop user access to the MV7+
-HID interface. Unplug and reconnect the microphone after installation, then
-launch the console from the application menu.
-
-Remove the package with:
-
-```bash
-sudo dnf remove shure-mv7
-```
-
-### Ubuntu DEB
-
-Build and install the package on Ubuntu or Debian:
-
-```bash
-sudo apt install golang-go dpkg-dev
-./packaging/ubuntu/build-deb.sh
-sudo apt install ./dist/DEBS/shure-mv7_*.deb
-```
-
-The package installs the `mv7web` binary, application launcher, man page, and
-Shure MV7+ udev rule. Reconnect the microphone after installation, then launch
-**Shure MV7+ Console** from the application menu.
-
-Remove the package with:
-
-```bash
-sudo apt remove shure-mv7
-```
-
-### Manual Fedora installation
-
-#### 1. Install tools
-
-```bash
-sudo dnf install git golang
-```
-
-The module currently targets Go 1.26.6. Confirm the installed toolchain with:
-
-```bash
-go version
-```
-
-#### 2. Clone and build
+To build from a source checkout:
 
 ```bash
 git clone https://github.com/awlx/mv7-linux-support.git
 cd mv7-linux-support
+```
+
+### Fedora
+
+```bash
+sudo dnf install golang rpm-build desktop-file-utils systemd-rpm-macros glib2
+./packaging/fedora/build-rpm.sh
+sudo dnf install ./dist/RPMS/shure-mv7-0.3.2-1.*.rpm
+```
+
+### Ubuntu / Debian
+
+```bash
+sudo apt install golang-go dpkg-dev libglib2.0-bin
+./packaging/ubuntu/build-deb.sh
+sudo apt install ./dist/DEBS/shure-mv7_0.3.2-1_*.deb
+```
+
+If you already have a built package, only the final install command is needed.
+Container build recipes are available for [Fedora](packaging/fedora/Containerfile)
+and [Ubuntu/Debian](packaging/ubuntu/Containerfile).
+
+### Enable the app and panel
+
+Reconnect the microphone after installation, then start the daemon as your
+desktop user:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now mv7web.service
+```
+
+Log out and back in to load the newly installed extension, then enable it:
+
+```bash
+gnome-extensions enable shure-mv7plus@shure-mv7.local
+```
+
+Open **MV7+ Control** from the application menu, or run `mv7-native`.
+No separate extension download or source installation is required.
+The service retries if the microphone is absent at login.
+
+For the web interface, open <http://127.0.0.1:8090> or launch **Shure MV7+ Console**.
+The web shortcut (`mv7web -open`) reuses a daemon at the configured address;
+if the address is free, it starts one. It does not stop or restart the user service.
+
+### Upgrade
+
+Close **MV7+ Control** and disable the extension before replacing its files:
+
+```bash
+gnome-extensions disable shure-mv7plus@shure-mv7.local
+```
+
+Update your checkout with `git pull --ff-only`, then rebuild and install the
+package using the commands above. Restart the installed daemon:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user restart mv7web.service
+```
+
+Log out and back in, re-enable the extension, and reopen the app. Source-only
+users should repeat the source installation below and restart their foreground
+daemon instead of using these service commands.
+
+### Install from source without a package
+
+From the same checkout, install the desktop dependencies:
+
+```bash
+# Fedora
+sudo dnf install gjs gtk4 libadwaita libsoup3 glib2 pulseaudio-utils
+
+# Ubuntu / Debian
+sudo apt install gjs gir1.2-gtk-4.0 gir1.2-adw-1 gir1.2-soup-3.0 libglib2.0-bin pulseaudio-utils
+```
+
+Build the daemon, install the HID permission rule, and install the desktop clients:
+
+```bash
 mkdir -p bin
 go build -trimpath -o bin/mv7web ./cmd/mv7web
-```
-
-#### 3. Permit HID access
-
-The application needs read/write access to the MV7+ vendor `hidraw` device.
-A dedicated group is reliable for both local and SSH sessions on Fedora.
-
-Create the group and add your user:
-
-```bash
-sudo groupadd --system shure
-sudo usermod -aG shure "$USER"
-```
-
-If the group already exists, the first command can be skipped. Install the
-udev rule:
-
-```bash
-sudo tee /etc/udev/rules.d/62-shure-mv7plus.rules >/dev/null <<'EOF'
-SUBSYSTEM=="hidraw", ATTRS{idVendor}=="14ed", ATTRS{idProduct}=="1019", GROUP="shure", MODE="0660"
-EOF
-
+sudo install -Dm644 packaging/fedora/62-shure-mv7plus.rules \
+  /etc/udev/rules.d/62-shure-mv7plus.rules
 sudo udevadm control --reload-rules
-sudo udevadm trigger --subsystem-match=hidraw
+bash packaging/gnome/install.sh
 ```
 
-Unplug and reconnect the microphone, then log out and back in so the new group
-membership applies. For an SSH session, disconnect and reconnect.
+Reconnect the microphone and log out/back in. Start `./bin/mv7web` in a terminal,
+then open **MV7+ Control** and enable the extension as above. The desktop launcher
+is also available at `~/.local/bin/mv7-native`.
 
-Verify detection and permissions:
+`packaging/gnome/install.sh` installs only the per-user desktop clients and honors
+`XDG_DATA_HOME`. It does **not** install `mv7web` on your `PATH` or install a systemd service.
+The supplied udev rule grants an active local desktop user HID access;
+headless or SSH-only sessions need separately configured device permissions.
+
+## Using the controls
+
+The app exposes all microphone settings; the panel menu provides quick controls.
+Manual gain is disabled while Auto Level or gain lock is enabled.
+Hardware changes appear automatically.
+
+The panel distinguishes live, muted, disconnected, and unknown/error states.
+Its mute indicator reflects the **microphone's hardware mute**, not system or
+per-application mute. It does not guarantee that another application is receiving
+audio.
+
+Open extension preferences with:
 
 ```bash
-lsusb | grep -i '14ed:1019'
-grep -H 'HID_ID=.*000014ED:00001019' /sys/class/hidraw/hidraw*/device/uevent
-ls -l /dev/hidraw*
+gnome-extensions prefs shure-mv7plus@shure-mv7.local
 ```
 
-The matching device should be writable by the `shure` group.
+Enable **Show level numbers in panel** to add numeric dBFS beside the filling
+icon. It is off by default. The app's Connection page and extension preferences
+also let you change the **Daemon URL** if you use a different local port.
 
-## Running
+### Live input meter
 
-Start the server:
+The meter shows captured input level in **dBFS**, not configured gain or dBm.
+The menu and app show sample peak and RMS.
+Bars cover -60 to 0 dBFS, while numeric readings have a -90 dBFS floor.
+System input gain/mute and microphone processing can affect these readings.
+
+The desktop meter fades from green below -18 dBFS through yellow near -6 dBFS
+to red near full scale. Its separate peak marker holds for one second, then
+falls at 12 dB per second; the bar and Peak/RMS details remain live.
+**CLIPPING** indicates actual full-scale samples, not just a high level.
+
+The daemon selects a single MV7+ USB audio source rather than intentionally
+using the default microphone. Missing or ambiguous sources show `-- dBFS`;
+hardware controls still work. Routing is checked periodically, so changes
+between checks cannot be ruled out.
+
+The meter measures the direct MV7+ source, not the EasyEffects output.
+On PipeWire/WirePlumber it opts out of automatic source moves; other applications
+can still use EasyEffects.
+
+**Privacy:** audio is processed in memory, never saved or sent to the clients;
+only level numbers are transmitted. Capture runs while the microphone is
+available and at least one connected client has **Live input meter** enabled.
+Your desktop may show a microphone-in-use indicator. Disable metering in both
+clients, or close the app and disable the extension, to stop capture.
+
+### Remote control
+
+The default endpoint is `127.0.0.1:8090`. The daemon has **no authentication or
+TLS**; keep it on loopback and use an SSH tunnel for remote access:
 
 ```bash
-./bin/mv7web
+ssh -N -L 8090:127.0.0.1:8090 user@microphone-pc
 ```
 
-It should report:
-
-```text
-MV7+ web console listening on http://127.0.0.1:8090
-```
-
-Browse to <http://127.0.0.1:8090> on the local machine.
-
-### Desktop launcher
-
-Install the binary and desktop entry after building:
-
-```bash
-sudo install -Dm755 bin/mv7web /usr/local/bin/mv7web
-install -Dm644 packaging/fedora/shure-mv7.desktop \
-  "$HOME/.local/share/applications/shure-mv7.desktop"
-update-desktop-database "$HOME/.local/share/applications"
-```
-
-The **Shure MV7+ Console** entry will appear in the desktop application menu.
-Launching it starts the server and opens the console in the default browser.
-Launching it again restarts the current user's server and reopens the console,
-so package upgrades cannot leave an older binary running in the background.
-
-The `update-desktop-database` command is optional. If it is unavailable,
-install it with `sudo dnf install desktop-file-utils` or log out and back in.
-
-To use a different local port:
-
-```bash
-./bin/mv7web -addr 127.0.0.1:9090
-```
-
-### Remote use
-
-For remote control of a microphone connected to a streamer PC, the safest
-option is to leave `mv7web` on its default loopback address and create an SSH
-tunnel from the computer used for control:
-
-```bash
-ssh -L 8090:127.0.0.1:8090 user@streamer-pc
-```
-
-Then open <http://127.0.0.1:8090> on the controlling computer.
-
-It can also listen directly on the streamer PC's network interfaces:
-
-```bash
-./bin/mv7web -addr 0.0.0.0:8090
-```
-
-In that configuration, open `http://streamer-pc:8090` from another computer
-on the same trusted private network. Restrict access with the host firewall.
-
-`mv7web` does not provide authentication or TLS. Never expose its listening
-port directly to the internet. For access beyond a trusted private network,
-keep it on loopback and use an SSH tunnel, VPN, or authenticated HTTPS reverse
-proxy.
-
-## Development
-
-Run the test suite and static checks:
-
-```bash
-go test ./...
-go vet ./...
-```
-
-Build a static Linux AMD64 binary from another platform:
-
-```bash
-mkdir -p bin
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-  go build -trimpath -o bin/mv7web-linux-amd64 ./cmd/mv7web
-```
-
-The web assets live under `internal/webui/web` and are embedded into the final
-binary, so deployment only requires the executable.
-
-Binary RPMs are written to `dist/RPMS/` and source RPMs to `dist/SRPMS/` by
-`packaging/fedora/build-rpm.sh`.
-
-To build in a Fedora container instead of installing RPM tools locally:
-
-```bash
-docker build -f packaging/fedora/Containerfile -t shure-mv7-rpm .
-docker run --rm -v "$PWD:/src" shure-mv7-rpm
-```
-
-On an Apple Silicon host, build the Fedora `x86_64` RPM without emulation:
-
-```bash
-docker run --rm -e RPM_TARGET=x86_64 -v "$PWD:/src" shure-mv7-rpm
-```
-
-### Ubuntu package builds
-
-DEB packages are written to `dist/DEBS/`. To build without installing Debian
-packaging tools locally:
-
-```bash
-docker build -f packaging/ubuntu/Containerfile -t shure-mv7-deb .
-docker run --rm -v "$PWD:/src" shure-mv7-deb
-```
-
-On an Apple Silicon host, build an Ubuntu `amd64` package without emulation:
-
-```bash
-docker run --rm -e DEB_TARGET_ARCH=amd64 -v "$PWD:/src" shure-mv7-deb
-```
-
-### Gain handoff diagnostic
-
-`handoffdiag` is a read-only diagnostic for observing gain while moving the
-microphone between hosts. It waits for the MV7+, repeatedly reads its state,
-and prints gain, Auto Level mode, and reconnect generation. It never sends a
-SET command.
-
-Build and run it on Linux:
-
-```bash
-go build -o mv7-handoffdiag ./cmd/handoffdiag
-./mv7-handoffdiag
-```
-
-Start it before connecting the microphone to capture the first value exposed
-by the device after a phone-to-PC handoff. Stop it with `Ctrl+C`.
+Connect the app, extension, or browser to the local forwarded address.
+The GNOME clients accept only loopback HTTP/HTTPS URLs.
 
 ## Troubleshooting
 
-### MV7+ not found
+| Problem | Check |
+|---|---|
+| Microphone not found | Confirm `lsusb` shows `14ed:1019`. Reconnect after installing the udev rule and run as your desktop user, not root. |
+| App or panel cannot connect | Check `systemctl --user status mv7web.service`, the configured Daemon URL, and whether another process is using port 8090. |
+| Meter unavailable | Install `pulseaudio-utils`; ensure PulseAudio or `pipewire-pulse` runs for the same user as the daemon and exposes one MV7+ input. |
+| Controls revert | Check daemon logs for HID errors. Gain also requires Auto Level and gain lock to be off. |
 
-- Confirm `lsusb` shows `14ed:1019`.
-- Confirm the matching `/dev/hidrawN` exists.
-- Check that your current session includes the `shure` group with `id`.
-- Reconnect the microphone after changing udev rules.
-- Make sure another application is not exclusively controlling the device.
+Read service logs with:
 
-### Controls revert in the browser
+```bash
+journalctl --user -u mv7web.service -f
+```
 
-The UI refreshes from hardware state after each command. If a control reverts,
-check the server output for HID read/write errors and verify write permission on
-the matching `hidraw` node.
+## Disable or remove
 
-### Browser cannot connect
+```bash
+gnome-extensions disable shure-mv7plus@shure-mv7.local
+systemctl --user disable --now mv7web.service  # Packaged service only
+```
 
-Confirm the server is running and listening on `127.0.0.1:8090`. Also check
-that another process is not already using port 8090.
+Close the native app as well. To remove a packaged installation, use
+`sudo dnf remove shure-mv7` or `sudo apt remove shure-mv7`.
+
+## Development
+
+```bash
+go test -race ./...
+go vet ./...
+node --test gnome-extension/tests/*.test.js gnome-app/tests/*.test.mjs internal/webui/app.test.cjs
+bash packaging/gnome/test-install.sh  # Linux
+```
+
+On a Linux desktop with the native dependencies installed:
+
+```bash
+glib-compile-schemas --strict gnome-app/schemas
+gjs -m gnome-app/main.js
+```
+
+`gjs -m gnome-app/tests/widgets.gjs` checks GTK widgets with a mocked connection;
+`gjs -m gnome-extension/tests/live.gjs` checks a loopback WebSocket fixture.
+Neither replaces testing with a real microphone.
+
+The web assets in `internal/webui/web` are embedded in the daemon binary.
+Protocol code is in `internal/mv7`; capture and routing details are documented
+in [`internal/meter/doc.go`](internal/meter/doc.go).
+
+## License and credits
+
+Copyright (C) 2026 Annika Wickert. Licensed under **GPL-3.0-only**; see [LICENSE](LICENSE).
+The binary MV7+ protocol implementation is based on the GPL-3.0-licensed captures,
+documentation, and implementation in [Humblemonk/shurectl](https://github.com/Humblemonk/shurectl).

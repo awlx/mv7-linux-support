@@ -1,5 +1,5 @@
 Name:           shure-mv7
-Version:        0.1.8
+Version:        0.3.2
 Release:        1%{?dist}
 Summary:        Unofficial Linux web console for the Shure MV7+ microphone
 %global debug_package %{nil}
@@ -11,9 +11,15 @@ Source0:        %{url}/archive/v%{version}.tar.gz#/%{name}-%{version}.tar.gz
 BuildRequires:  golang >= 1.26
 BuildRequires:  desktop-file-utils
 BuildRequires:  systemd-rpm-macros
+BuildRequires:  glib2
 Requires:       systemd-udev
 Requires:       xdg-utils
-Requires:       procps-ng
+Recommends:     gjs
+Recommends:     gtk4 >= 4.10
+Recommends:     libadwaita >= 1.4
+Recommends:     libsoup3
+Recommends:     pulseaudio-utils
+Suggests:       gnome-shell >= 45
 
 %description
 Shure MV7+ Web Console is an unofficial independent Linux application that
@@ -21,6 +27,8 @@ controls a Shure MV7+ microphone through its vendor HID interface. It serves
 an embedded local web interface for gain, DSP, monitoring, reverb, LED, and
 mute controls. It is not affiliated with, endorsed by, or supported by Shure
 Incorporated.
+Includes a native GTK4/libadwaita application and a GNOME Shell panel
+extension. Both connect to the same local mv7web daemon.
 
 %prep
 %autosetup
@@ -45,6 +53,7 @@ install -Dpm0644 packaging/fedora/62-shure-mv7plus.rules \
   %{buildroot}%{_udevrulesdir}/62-shure-mv7plus.rules
 install -Dpm0644 packaging/fedora/mv7web.1 \
   %{buildroot}%{_mandir}/man1/mv7web.1
+bash packaging/gnome/stage.sh %{buildroot} %{_prefix}
 
 %check
 export CGO_ENABLED=0
@@ -64,6 +73,12 @@ go test ./...
 %{_datadir}/applications/shure-mv7.desktop
 %{_udevrulesdir}/62-shure-mv7plus.rules
 %{_mandir}/man1/mv7web.1*
+%{_bindir}/mv7-native
+%{_datadir}/shure-mv7/
+%{_datadir}/gnome-shell/extensions/shure-mv7plus@shure-mv7.local/
+%{_datadir}/applications/io.github.awlx.MV7.desktop
+%{_datadir}/icons/hicolor/scalable/apps/io.github.awlx.MV7.svg
+%{_userunitdir}/mv7web.service
 
 %post
 %udev_post
@@ -72,6 +87,21 @@ go test ./...
 %udev_preun
 
 %changelog
+* Sun Sep 13 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.2-1
+- Add a live-input card with a decaying peak marker and headroom colour gradient
+
+* Sun Sep 13 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.1-1
+- Reuse the running daemon when opening the web console instead of terminating it
+- Prevent automatic PipeWire/WirePlumber moves of the direct microphone meter
+- Simplify installation instructions and remove the obsolete procps dependency
+
+* Sun Sep 13 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.0-1
+- Add shared MV7+ input metering, filling panel icon, and optional level numbers
+- Recommend PulseAudio capture utilities for live dBFS
+
+* Sun Sep 13 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.2.0-1
+- Add native GNOME controls, live panel status, and an optional user service
+
 * Fri Aug 28 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.1.8-1
 - Support manual gain in 0.5 dB increments
 - Add a synchronized numeric gain input

@@ -134,6 +134,7 @@ func (d *Device) GetState() (DeviceState, error) {
 		state = d.state
 	}
 	gotGain := false
+	gotMute := false
 
 	getters := []struct {
 		name  string
@@ -155,6 +156,7 @@ func (d *Device) GetState() (DeviceState, error) {
 		{"mute", cmdGet(0, 0x00, featMute), func(r *Response, s *DeviceState) {
 			if len(r.Value) >= 1 {
 				s.Muted = r.Value[0] != 0
+				gotMute = true
 			}
 		}},
 		{"hpf", cmdGet(0, 0x00, featHPF), func(r *Response, s *DeviceState) {
@@ -309,6 +311,11 @@ func (d *Device) GetState() (DeviceState, error) {
 	}
 	if !gotGain {
 		return DeviceState{}, errors.New("MV7+ did not return its current gain")
+	}
+	// A missing or truncated mute reply must fail the refresh: reporting a
+	// default (un)muted value would be a privacy hazard for status consumers.
+	if !gotMute {
+		return DeviceState{}, errors.New("MV7+ did not return its current mute state")
 	}
 	d.state = state
 	d.haveState = true

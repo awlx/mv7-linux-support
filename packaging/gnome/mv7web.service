@@ -1,0 +1,11 @@
+[Unit]
+Description=MV7+ local control daemon
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=/usr/bin/mv7web -addr 127.0.0.1:8090
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

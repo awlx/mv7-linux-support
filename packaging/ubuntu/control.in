@@ -4,10 +4,14 @@ Section: sound
 Priority: optional
 Architecture: @ARCH@
 Maintainer: Annika Wickert <awlx@users.noreply.github.com>
-Depends: procps, udev, xdg-utils
+Depends: udev, xdg-utils
+Recommends: gjs, gir1.2-gtk-4.0 (>= 4.10), gir1.2-adw-1 (>= 1.4), gir1.2-soup-3.0, pulseaudio-utils
+Suggests: gnome-shell (>= 45)
 Homepage: https://github.com/awlx/mv7-linux-support
 Description: Unofficial Linux web console for the Shure MV7+ microphone
  This independent application controls a Shure MV7+ microphone through its
  vendor HID interface and serves an embedded local web interface for gain,
  DSP, monitoring, reverb, LED, and mute controls. It is not affiliated with,
  endorsed by, or supported by Shure Incorporated.
+ Includes a native GTK4/libadwaita application and GNOME Shell panel controls
+ backed by the same local daemon.

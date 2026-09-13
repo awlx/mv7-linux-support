@@ -1,4 +1,4 @@
-.TH MV7WEB 1 "August 28, 2026" "shure-mv7 0.1.8" "User Commands"
+.TH MV7WEB 1 "September 13, 2026" "shure-mv7 0.3.2" "User Commands"
 .SH NAME
 mv7web \- unofficial Linux control for a Shure MV7+ microphone
 .SH SYNOPSIS
@@ -29,9 +29,11 @@ internet.
 Set the HTTP listen address. The default is 127.0.0.1:8090.
 .TP
 .B \-open
-Stop an older mv7web process owned by the current user, then open the console
-in the default browser with xdg-open. This ensures desktop launches use the
-currently installed binary after an upgrade.
+Open the console in the default browser with xdg-open. If the configured
+address is already in use, open its URL and exit without restarting or stopping
+the running daemon. Otherwise, start the daemon and open its console.
+After a package upgrade, restart a service-managed daemon with
+.BR "systemctl --user restart mv7web.service" .
 .SH FILES
 .TP
 .I /usr/lib/udev/rules.d/62-shure-mv7plus.rules

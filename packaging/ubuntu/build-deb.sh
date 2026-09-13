@@ -2,7 +2,7 @@
 set -euo pipefail
 
 name="shure-mv7"
-version="0.1.8"
+version="0.3.2"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 work_dir="$(mktemp -d)"
 package_root="${work_dir}/${name}"
@@ -22,7 +22,7 @@ case "${target_arch}" in
     ;;
 esac
 
-for command in go dpkg-deb gzip; do
+for command in go dpkg-deb gzip glib-compile-schemas; do
   if ! command -v "${command}" >/dev/null 2>&1; then
     echo "missing required command: ${command}" >&2
     exit 1
@@ -68,6 +68,8 @@ install -m0755 "${repo_root}/packaging/ubuntu/postinst" \
   "${package_root}/DEBIAN/postinst"
 install -m0755 "${repo_root}/packaging/ubuntu/postrm" \
   "${package_root}/DEBIAN/postrm"
+
+bash "${repo_root}/packaging/gnome/stage.sh" "${package_root}" /usr
 
 output="${repo_root}/dist/DEBS/${name}_${version}-1_${target_arch}.deb"
 dpkg-deb --root-owner-group --build "${package_root}" "${output}"

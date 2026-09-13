@@ -3,6 +3,7 @@ package mv7
 import (
 	"encoding/binary"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 )
@@ -36,6 +37,9 @@ type startupIO struct {
 	gainLocked bool
 	generation uint64
 	skipGain   bool
+	skipMute   bool
+	shortMute  bool
+	muteRaw    byte
 }
 
 func (m *startupIO) Write(pkt []byte) error {
@@ -45,7 +49,12 @@ func (m *startupIO) Write(pkt []byte) error {
 }
 
 func (m *startupIO) ReadTimeout(buf []byte, _ time.Duration) (int, error) {
-	if m.skipGain && m.lastWrite[14] == featGain[0] && m.lastWrite[15] == featGain[1] {
+	isGain := m.lastWrite[14] == featGain[0] && m.lastWrite[15] == featGain[1]
+	isMute := m.lastWrite[14] == featMute[0] && m.lastWrite[15] == featMute[1]
+	if m.skipGain && isGain {
+		return 0, nil
+	}
+	if m.skipMute && isMute {
 		return 0, nil
 	}
 	cmd := resGetFeat
@@ -53,10 +62,16 @@ func (m *startupIO) ReadTimeout(buf []byte, _ time.Duration) (int, error) {
 		cmd = resGetLock
 	}
 	value := []byte{0, 0, 0, 0}
-	if m.lastWrite[14] == featGain[0] && m.lastWrite[15] == featGain[1] {
+	if isGain {
 		value = []byte{byte(m.gainRaw >> 8), byte(m.gainRaw)}
 	} else if m.lastWrite[14] == featGainLock[0] && m.lastWrite[15] == featGainLock[1] {
 		value = boolByte(m.gainLocked)
+	} else if isMute {
+		if m.shortMute {
+			value = nil
+		} else {
+			value = []byte{m.muteRaw}
+		}
 	}
 	payload := []byte{m.lastWrite[13], m.lastWrite[14], m.lastWrite[15]}
 	payload = append(payload, value...)
@@ -192,6 +207,37 @@ func TestGetStateRejectsRefreshWithoutCurrentGain(t *testing.T) {
 	io.skipGain = true
 	if _, err := dev.GetState(); err == nil {
 		t.Fatal("GetState succeeded without a current gain response")
+	}
+}
+
+func TestGetStateRejectsRefreshWithoutMuteRead(t *testing.T) {
+	io := &startupIO{gainRaw: 2300, skipMute: true}
+	dev := NewDevice(io)
+
+	if _, err := dev.GetState(); err == nil || !strings.Contains(err.Error(), "mute") {
+		t.Fatalf("GetState error = %v, want a mute read failure even though gain succeeded", err)
+	}
+}
+
+func TestGetStateRejectsTruncatedMuteResponse(t *testing.T) {
+	io := &startupIO{gainRaw: 2300, shortMute: true}
+	dev := NewDevice(io)
+
+	if _, err := dev.GetState(); err == nil || !strings.Contains(err.Error(), "mute") {
+		t.Fatalf("GetState error = %v, want a mute read failure for a valueless response", err)
+	}
+}
+
+func TestGetStateReadsMuteState(t *testing.T) {
+	io := &startupIO{gainRaw: 1500, muteRaw: 0x01}
+	dev := NewDevice(io)
+
+	state, err := dev.GetState()
+	if err != nil {
+		t.Fatalf("GetState: %v", err)
+	}
+	if !state.Muted {
+		t.Fatal("mute state was not read from the device")
 	}
 }
 

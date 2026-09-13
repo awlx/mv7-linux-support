@@ -17,15 +17,32 @@
     ws = new WebSocket(`${proto}://${location.host}/ws`);
 
     ws.onopen = () => {
-      setConn("connected", true);
+      setConn("waiting for microphone", false);
       send({ action: "get_state" });
     };
 
     ws.onmessage = (ev) => {
       let msg;
-      try { msg = JSON.parse(ev.data); } catch { return; }
-      if (msg.type === "state") applyState(msg.state);
-      else if (msg.type === "error") toast(msg.error, true);
+      try { msg = JSON.parse(ev.data); } catch {
+        setConn("invalid daemon response", false);
+        toast("The daemon sent an invalid response.", true);
+        return;
+      }
+      if (msg?.type === "state") {
+        if (!msg.state || typeof msg.state.muted !== "boolean") {
+          setConn("unknown microphone state", false);
+          return;
+        }
+        setConn("connected", true);
+        applyState(msg.state);
+      } else if (msg?.type === "status") {
+        if (!msg.connected) {
+          setConn("microphone unavailable", false);
+          connLabel.title = msg.error || "Waiting for the microphone to reconnect.";
+        } else if (!state) {
+          setConn("waiting for microphone", false);
+        }
+      } else if (msg?.type === "error") toast(msg.error, true);
     };
 
     ws.onclose = () => {
@@ -45,14 +62,29 @@
   }
 
   function send(msg) {
-    if (ws && ws.readyState === WebSocket.OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN &&
+        (state || msg.action === "get_state")) {
       ws.send(JSON.stringify(msg));
+      return true;
     }
+    return false;
   }
 
   function setConn(label, ok) {
     connLabel.textContent = label;
+    connLabel.title = "";
     dot.className = "dot" + (ok ? " on" : " err");
+    document.querySelectorAll("main button, main input, main select").forEach((el) => {
+      el.disabled = !ok;
+    });
+    if (!ok) {
+      state = null;
+      $("mutebtn").classList.remove("muted");
+      $("mutebtn").setAttribute("aria-label", "Microphone state unknown");
+      $("mutelabel").textContent = "Unknown";
+      $("fw").textContent = "";
+      $("serial").textContent = "";
+    }
   }
 
   // ── State application ────────────────────────────────────
@@ -65,6 +97,7 @@
 
     // Mute
     $("mutebtn").classList.toggle("muted", s.muted);
+    $("mutebtn").setAttribute("aria-label", s.muted ? "Unmute" : "Mute");
     $("mutelabel").textContent = s.muted ? "Unmute" : "Mute";
 
     // Mode
@@ -76,8 +109,8 @@
     setRange("gain", s.gain_db);
     if (document.activeElement !== $("gaininput")) $("gaininput").value = s.gain_db;
     setCheck("gainlocked", s.gain_locked);
-    $("gain").disabled = s.gain_locked;
-    $("gaininput").disabled = s.gain_locked;
+    $("gain").disabled = s.gain_locked || s.auto_level;
+    $("gaininput").disabled = s.gain_locked || s.auto_level;
 
     // DSP
     setSelect("hpf", s.hpf);
@@ -218,9 +251,10 @@
   });
 
   $("factoryreset").addEventListener("click", () => {
+    if (!state) return;
     if (confirm("Reset the MV7+ to factory defaults? The device will reconnect.")) {
-      send({ action: "factory_reset" });
-      toast("Factory reset sent — device is reconnecting…");
+      if (send({ action: "factory_reset" }))
+        toast("Factory reset sent — device is reconnecting…");
     }
   });
 
@@ -235,5 +269,6 @@
     toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
   }
 
+  setConn("connecting", false);
   connect();
 })();

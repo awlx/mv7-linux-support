@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "private": true,
+  "name": "mv7-gnome-extension-tests",
+  "description": "Node built-in test runner suite for daemonClient.js / state.js",
+  "scripts": {
+    "test": "node --test"
+  }
+}

@@ -5,6 +5,7 @@ RUN apt-get update \
       desktop-file-utils \
       dpkg-dev \
       lintian \
+      libglib2.0-bin \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
