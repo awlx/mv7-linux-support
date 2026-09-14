@@ -1,3 +1,10 @@
+shure-mv7 (0.3.3-1) unstable; urgency=medium
+
+  * Keep Shell meter and panel allocations stable across changing readings.
+  * Add native app and Shell screenshots to the documentation.
+
+ -- Annika Wickert <awlx@users.noreply.github.com>  Mon, 14 Sep 2026 07:00:00 +0000
+
 shure-mv7 (0.3.2-1) unstable; urgency=medium
 
   * Add a live-input card with a decaying peak marker and headroom colour gradient.

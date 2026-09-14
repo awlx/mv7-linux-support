@@ -15,7 +15,21 @@ Shure and MV7+ are trademarks of Shure Incorporated.
 - A panel microphone icon that fills with input level and shows hardware mute.
   Numeric panel levels are optional; the menu and native app show peak/RMS dBFS.
 
+| Native GNOME app | Shell quick controls |
+| --- | --- |
+| <img src="docs/gnome-app.png" width="440" alt="MV7+ Control app with live-input peak hold, gain, processing, and monitoring controls"> | <img src="docs/gnome-panel.png" width="280" alt="GNOME panel microphone indicator and open MV7+ menu with input peak, hardware mute, gain, and monitor mix"> |
+
+The GNOME screenshots show **demo readings**, not a live microphone. The app
+provides the full controls; the Shell menu keeps common adjustments close at hand.
+Hardware mute and measured input peak are distinct. Panel numbers are optional
+and off by default.
+
+<details>
+<summary>Optional web interface</summary>
+
 ![MV7+ web interface](docs/controls.png)
+
+</details>
 
 ## Requirements
 
@@ -46,7 +60,7 @@ cd mv7-linux-support
 ```bash
 sudo dnf install golang rpm-build desktop-file-utils systemd-rpm-macros glib2
 ./packaging/fedora/build-rpm.sh
-sudo dnf install ./dist/RPMS/shure-mv7-0.3.2-1.*.rpm
+sudo dnf install ./dist/RPMS/shure-mv7-0.3.3-1.*.rpm
 ```
 
 ### Ubuntu / Debian
@@ -54,7 +68,7 @@ sudo dnf install ./dist/RPMS/shure-mv7-0.3.2-1.*.rpm
 ```bash
 sudo apt install golang-go dpkg-dev libglib2.0-bin
 ./packaging/ubuntu/build-deb.sh
-sudo apt install ./dist/DEBS/shure-mv7_0.3.2-1_*.deb
+sudo apt install ./dist/DEBS/shure-mv7_0.3.3-1_*.deb
 ```
 
 If you already have a built package, only the final install command is needed.
@@ -164,6 +178,9 @@ The meter shows captured input level in **dBFS**, not configured gain or dBm.
 The menu and app show sample peak and RMS.
 Bars cover -60 to 0 dBFS, while numeric readings have a -90 dBFS floor.
 System input gain/mute and microphone processing can affect these readings.
+The Shell indicator and menu reserve space for changing readings, including
+silence and unavailable levels. The menu's full-width bar stays below its title;
+long errors wrap, and tall menus scroll on smaller displays.
 
 The desktop meter fades from green below -18 dBFS through yellow near -6 dBFS
 to red near full scale. Its separate peak marker holds for one second, then
@@ -241,6 +258,15 @@ gjs -m gnome-app/main.js
 `gjs -m gnome-app/tests/widgets.gjs` checks GTK widgets with a mocked connection;
 `gjs -m gnome-extension/tests/live.gjs` checks a loopback WebSocket fixture.
 Neither replaces testing with a real microphone.
+
+The opt-in layout regression runs the complete extension with synthetic data in
+a headless GNOME Shell, checking real panel/menu allocations, themes, scaling,
+and keyboard scrolling. Run it only in a disposable Linux environment with
+GNOME Shell installed; it starts a private D-Bus session and does not use audio:
+
+```bash
+MV7_SHELL_LAYOUT_TEST=1 bash gnome-extension/tests/shell-layout.sh
+```
 
 The web assets in `internal/webui/web` are embedded in the daemon binary.
 Protocol code is in `internal/mv7`; capture and routing details are documented

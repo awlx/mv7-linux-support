@@ -18,7 +18,7 @@ command -v glib-compile-schemas >/dev/null || {
   exit 1
 }
 
-for file in metadata.json extension.js prefs.js stylesheet.css daemonClient.js state.js; do
+for file in metadata.json extension.js prefs.js stylesheet.css daemonClient.js state.js panelWidgets.js; do
   install -Dm644 "${repo_root}/gnome-extension/${file}" "${extension}/${file}"
 done
 install -Dm644 \

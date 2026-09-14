@@ -12,6 +12,7 @@ import {BarLevel} from 'resource:///org/gnome/shell/ui/barLevel.js';
 
 import {DaemonClient} from './daemonClient.js';
 import {meterDisplay, parseEndpoint} from './state.js';
+import {IconBox, LevelLabel, WrappingLabel} from './panelWidgets.js';
 
 export default class MV7Extension extends Extension {
     enable() {
@@ -22,41 +23,70 @@ export default class MV7Extension extends Extension {
         this._applying = false;
         this._settings = this.getSettings();
         this._button = new PanelMenu.Button(0, 'MV7+ Control');
+        const menuBox = this._button.menu.box;
+        const menuBin = menuBox.get_parent();
+        menuBin.remove_child(menuBox);
+        const scroll = new St.ScrollView({
+            hscrollbar_policy: St.PolicyType.NEVER,
+            vscrollbar_policy: St.PolicyType.AUTOMATIC,
+            overlay_scrollbars: true,
+        });
+        scroll.set_child(menuBox);
+        menuBin.set_child(scroll);
+        this._button.menu.connectObject('active-changed', (_menu, item) => {
+            if (!item || !menuBox.contains(item))
+                return;
+            let top = 0;
+            for (let actor = item; actor !== menuBox; actor = actor.get_parent())
+                top += actor.get_allocation_box().y1;
+            const adjustment = scroll.get_vadjustment
+                ? scroll.get_vadjustment() : scroll.get_vscroll_bar().get_adjustment();
+            adjustment.clamp_page(top, top + item.get_allocation_box().get_height());
+        }, scroll);
         this._icon = new St.Icon({
             icon_name: 'network-offline-symbolic', style_class: 'system-status-icon',
         });
-        const microphone = new St.Widget({layout_manager: new Clutter.BinLayout()});
         this._fillIcon = new St.DrawingArea({
-            width: 16, height: 20, x_align: Clutter.ActorAlign.CENTER,
-            y_align: Clutter.ActorAlign.CENTER, style_class: 'mv7-input-fill',
+            style_class: 'mv7-input-fill',
         });
-        microphone.add_child(this._icon);
-        microphone.add_child(this._fillIcon);
+        const microphone = new IconBox(this._icon, this._fillIcon);
         this._fillIcon.connect('repaint', () => this._drawInputIcon());
         const indicator = new St.BoxLayout({style_class: 'mv7-indicator'});
-        this._levelLabel = new St.Label({
+        this._levelLabel = new LevelLabel({
             text: '-- dBFS', style_class: 'mv7-panel-level', y_align: Clutter.ActorAlign.CENTER,
         });
         indicator.add_child(microphone);
         indicator.add_child(this._levelLabel);
         this._button.add_child(indicator);
-        this._status = new PopupMenu.PopupMenuItem('Connecting to MV7+', {reactive: false});
-        this._status.label.add_style_class_name('mv7-status-label');
+        this._status = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+        this._status.label = new WrappingLabel({
+            text: 'Connecting to MV7+', style_class: 'mv7-status-label',
+        });
+        this._status.add_child(this._status.label);
+        this._status.label_actor = this._status.label;
         this._button.menu.addMenuItem(this._status);
-        this._error = new PopupMenu.PopupMenuItem('', {reactive: false});
-        this._error.label.add_style_class_name('mv7-error-label');
+        this._error = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+        this._error.label = new WrappingLabel({style_class: 'mv7-error-label'});
+        this._error.add_child(this._error.label);
+        this._error.label_actor = this._error.label;
         this._error.visible = false;
         this._button.menu.addMenuItem(this._error);
         this._meterRow = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
-        this._meterTitle = new St.Label({text: 'Input peak: -- dBFS'});
-        this._meterBar = new BarLevel({style_class: 'slider', x_expand: true});
+        this._meterTitle = new LevelLabel({text: 'Input peak: -- dBFS'}, 'Input peak: ');
+        this._meterBar = new BarLevel({style_class: 'slider mv7-meter-bar', x_expand: true});
         this._meterBar.overdrive_start = 54 / 60;
         this._meterBar.accessible_name = 'MV7+ input peak level';
-        this._meterRow.add_child(this._meterTitle);
-        this._meterRow.add_child(this._meterBar);
+        const meterBox = new St.BoxLayout({vertical: true, x_expand: true});
+        meterBox.add_child(this._meterTitle);
+        meterBox.add_child(this._meterBar);
+        this._meterRow.add_child(meterBox);
         this._button.menu.addMenuItem(this._meterRow);
-        this._meterDetail = new PopupMenu.PopupMenuItem('Waiting for input level', {reactive: false});
-        this._meterDetail.label.add_style_class_name('mv7-meter-detail');
+        this._meterDetail = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
+        this._meterDetail.label = new WrappingLabel({
+            text: 'Waiting for input level', style_class: 'mv7-meter-detail',
+        }, 2);
+        this._meterDetail.add_child(this._meterDetail.label);
+        this._meterDetail.label_actor = this._meterDetail.label;
         this._button.menu.addMenuItem(this._meterDetail);
         this._meterSwitch = new PopupMenu.PopupSwitchMenuItem(
             'Live input meter', this._settings.get_boolean('meter-enabled'));
@@ -299,8 +329,9 @@ export default class MV7Extension extends Extension {
         const visible = this._settings.get_boolean('meter-enabled') &&
             this._meterReading?.available === true &&
             this._snapshot?.connection === 'connected' && this._snapshot.state?.muted === false;
-        this._fillIcon.visible = visible;
-        this._icon.visible = !visible;
+        // Both participate in layout so themed icon padding stays reserved.
+        this._fillIcon.opacity = visible ? 255 : 0;
+        this._icon.opacity = visible ? 0 : 255;
         if (visible)
             this._fillIcon.queue_repaint();
     }
@@ -310,7 +341,9 @@ export default class MV7Extension extends Extension {
         const [width, height] = this._fillIcon.get_surface_size();
         const color = this._fillIcon.get_theme_node().get_foreground_color();
         const outline = this._button.get_theme_node().get_foreground_color();
-        cr.scale(width / 16, height / 20);
+        const scale = Math.min(width / 16, height / 20);
+        cr.translate((width - 16 * scale) / 2, (height - 20 * scale) / 2);
+        cr.scale(scale, scale);
         cr.setLineWidth(1.5);
         cr.arc(8, 5, 3, Math.PI, 0);
         cr.lineTo(11, 10);

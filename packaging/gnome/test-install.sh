@@ -7,6 +7,7 @@ trap 'rm -rf -- "${temporary}"' EXIT
 bash "${repo_root}/packaging/gnome/stage.sh" "${temporary}/package" /usr
 extension="${temporary}/package/usr/share/gnome-shell/extensions/shure-mv7plus@shure-mv7.local"
 test -s "${extension}/schemas/gschemas.compiled"
+test -s "${extension}/panelWidgets.js"
 test -s "${temporary}/package/usr/share/shure-mv7/gnome-app/schemas/gschemas.compiled"
 test -x "${temporary}/package/usr/bin/mv7-native"
 test -f "${temporary}/package/usr/lib/systemd/user/mv7web.service"
@@ -24,6 +25,7 @@ printf 'preserve\n' > "${installed}/user-note.txt"
 bash "${repo_root}/packaging/gnome/install.sh"
 test "$(cat "${installed}/user-note.txt")" = preserve
 test -s "${installed}/schemas/gschemas.compiled"
+test -s "${installed}/panelWidgets.js"
 test -x "${HOME}/.local/bin/mv7-native"
 bash -n "${HOME}/.local/bin/mv7-native"
 grep -F "Exec=\"${HOME}/.local/bin/mv7-native\"" \

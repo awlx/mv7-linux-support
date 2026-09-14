@@ -2,7 +2,7 @@
 set -euo pipefail
 
 name="shure-mv7"
-version="0.3.2"
+version="0.3.3"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 work_dir="$(mktemp -d)"
 package_root="${work_dir}/${name}"
