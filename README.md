@@ -17,10 +17,11 @@ Shure and MV7+ are trademarks of Shure Incorporated.
 
 | Native GNOME app | Shell quick controls |
 | --- | --- |
-| <img src="docs/gnome-app.png" width="440" alt="MV7+ Control app with live-input peak hold, gain, processing, and monitoring controls"> | <img src="docs/gnome-panel.png" width="280" alt="GNOME panel microphone indicator and open MV7+ menu with input peak, hardware mute, gain, and monitor mix"> |
+| <img src="docs/gnome-app.png" width="440" alt="MV7+ Control app with hardware mute above live input, followed by gain, processing, and monitoring controls"> | <img src="docs/gnome-panel.png" width="280" alt="GNOME panel microphone indicator and open MV7+ menu with mute above the input meter and gain controls"> |
 
 The GNOME screenshots show **demo readings**, not a live microphone. The app
 provides the full controls; the Shell menu keeps common adjustments close at hand.
+Both put hardware mute first, above the live meter, with gain controls below.
 Hardware mute and measured input peak are distinct. Panel numbers are optional
 and off by default.
 
@@ -60,7 +61,7 @@ cd mv7-linux-support
 ```bash
 sudo dnf install golang rpm-build desktop-file-utils systemd-rpm-macros glib2
 ./packaging/fedora/build-rpm.sh
-sudo dnf install ./dist/RPMS/shure-mv7-0.3.3-1.*.rpm
+sudo dnf install ./dist/RPMS/shure-mv7-0.3.4-1.*.rpm
 ```
 
 ### Ubuntu / Debian
@@ -68,7 +69,7 @@ sudo dnf install ./dist/RPMS/shure-mv7-0.3.3-1.*.rpm
 ```bash
 sudo apt install golang-go dpkg-dev libglib2.0-bin
 ./packaging/ubuntu/build-deb.sh
-sudo apt install ./dist/DEBS/shure-mv7_0.3.3-1_*.deb
+sudo apt install ./dist/DEBS/shure-mv7_0.3.4-1_*.deb
 ```
 
 If you already have a built package, only the final install command is needed.
@@ -258,6 +259,8 @@ gjs -m gnome-app/main.js
 `gjs -m gnome-app/tests/widgets.gjs` checks GTK widgets with a mocked connection;
 `gjs -m gnome-extension/tests/live.gjs` checks a loopback WebSocket fixture.
 Neither replaces testing with a real microphone.
+Set `MV7_WIDGET_SCREENSHOT` to a PNG output path to capture the real native
+window with demo readings after its widget checks.
 
 The opt-in layout regression runs the complete extension with synthetic data in
 a headless GNOME Shell, checking real panel/menu allocations, themes, scaling,

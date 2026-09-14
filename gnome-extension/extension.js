@@ -71,6 +71,7 @@ export default class MV7Extension extends Extension {
         this._error.label_actor = this._error.label;
         this._error.visible = false;
         this._button.menu.addMenuItem(this._error);
+        this._switch(this._button.menu, 'Mute microphone', 'muted', 'set_mute');
         this._meterRow = new PopupMenu.PopupBaseMenuItem({reactive: false, can_focus: false});
         this._meterTitle = new LevelLabel({text: 'Input peak: -- dBFS'}, 'Input peak: ');
         this._meterBar = new BarLevel({style_class: 'slider mv7-meter-bar', x_expand: true});
@@ -95,7 +96,6 @@ export default class MV7Extension extends Extension {
         this._button.menu.addMenuItem(this._meterSwitch);
         this._button.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        this._switch(this._button.menu, 'Mute microphone', 'muted', 'set_mute');
         this._switch(this._button.menu, 'Auto Level', 'auto_level', 'set_auto_level');
         this._range(this._button.menu, 'Gain', 'gain_db', 'set_gain', 0, 36, 0.5, ' dB');
         this._switch(this._button.menu, 'Gain lock', 'gain_locked', 'set_gain_locked');

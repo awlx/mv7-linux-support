@@ -80,6 +80,18 @@ function dimensions(extension, before, after) {
 }
 
 function checkContent(extension, meterEnabled, numbers) {
+    const fields = ['muted', 'auto_level', 'gain_db', 'gain_locked'];
+    const [mute, auto, gain, lock] = fields.map(field => {
+        const matches = extension._bindings.filter(binding => binding.field === field);
+        equal(matches.length, 1, `Exactly one ${field} control`);
+        return matches[0].item;
+    });
+    const rows = [mute, extension._meterRow, extension._meterDetail, extension._meterSwitch, auto, gain, lock];
+    for (let i = 1; i < rows.length; i++) {
+        const prior = allocation(rows[i - 1]), next = allocation(rows[i]);
+        assert(prior.y + prior.height <= next.y,
+            'Actual popup allocation must be Mute, live meter, then gain controls');
+    }
     equal(extension._levelLabel.visible, meterEnabled && numbers, 'Numeric preference');
     if (extension._levelLabel.visible)
         textFits(extension._levelLabel);
@@ -164,6 +176,34 @@ async function screenshot(extension) {
     return metrics;
 }
 
+async function checkControls(extension) {
+    const sent = [];
+    extension._client = {send: (action, params) => { sent.push({action, params}); return true; }};
+    const mute = extension._bindings.find(binding => binding.field === 'muted');
+    const gain = extension._bindings.find(binding => binding.field === 'gain_db');
+    extension._update({connection: 'connected', state: demoState});
+    mute.item.activate({type: () => Clutter.EventType.KEY_PRESS, get_key_symbol: () => Clutter.KEY_space});
+    equal(sent, [{action: 'set_mute', params: {value: true}}], 'Hardware mute command');
+    equal(extension._status.label.text, 'MV7+ microphone live', 'Mute must wait for hardware confirmation');
+    extension._update({connection: 'connected', state: {...demoState, muted: true}});
+    equal(extension._status.label.text, 'MV7+ microphone muted', 'Confirmed hardware mute');
+    for (const flags of [{auto_level: true}, {gain_locked: true}]) {
+        extension._update({connection: 'connected', state: {...demoState, ...flags}});
+        assert(!gain.slider.reactive && !gain.slider.can_focus, 'Locked/automatic gain must stay disabled');
+        extension._send(gain, 15);
+        equal(sent.length, 1, 'Disabled gain must not send a command');
+    }
+    extension._update({connection: 'connected', state: demoState});
+    extension._debounce(gain, 15);
+    extension._update({connection: 'disconnected', state: null});
+    await delay(250);
+    equal(sent.length, 1, 'Disconnect must cancel pending gain writes');
+    equal(extension._pending.size, 0, 'Disconnect must clear pending writes');
+    assert(!mute.item.reactive, 'Disconnected mute must be disabled');
+    extension._client = null;
+    extension._update({connection: 'connected', state: demoState});
+}
+
 export async function run(extension) {
     Main.overview.hide();
     extension._fillIcon.connect('repaint', actor => painted.set(actor, actor.get_surface_size()));
@@ -183,6 +223,7 @@ export async function run(extension) {
     let samples = 0;
     extension._button.menu.open();
     await delay(500);
+    await checkControls(extension);
     for (const [scale, large] of [[1, false], [2, false], [2, true], [1, true], [1, false]]) {
         context.scale_factor = scale;
         context.set_font(large ? Pango.FontDescription.from_string('DejaVu Serif 15') : originalFont);
@@ -263,6 +304,15 @@ export async function run(extension) {
         equal(relayouts, 0, 'Idle relayout loop');
         extension._button.disconnect(handler);
         const scroll = extension._button.menu.box.get_parent();
+        const mute = extension._bindings.find(binding => binding.field === 'muted').item;
+        const auto = extension._bindings.find(binding => binding.field === 'auto_level').item;
+        mute.grab_key_focus();
+        assert(extension._button.menu.box.navigate_focus(mute, St.DirectionType.TAB_FORWARD, false),
+            'Keyboard navigation from mute failed');
+        assert(global.stage.get_key_focus() === extension._meterSwitch, 'Meter toggle follows hardware mute');
+        assert(extension._button.menu.box.navigate_focus(extension._meterSwitch, St.DirectionType.TAB_FORWARD, false),
+            'Keyboard navigation from meter toggle failed');
+        assert(global.stage.get_key_focus() === auto, 'Auto Level follows the live input controls');
         const lastItem = extension._button.menu.box.get_last_child();
         lastItem.grab_key_focus();
         await delay(200);
@@ -270,8 +320,11 @@ export async function run(extension) {
         const focused = allocation(lastItem);
         assert(focused.y >= viewport.y && focused.y + focused.height <= viewport.y + viewport.height,
             'Keyboard focus did not scroll the last menu item into view');
-        extension._meterSwitch.grab_key_focus();
+        mute.grab_key_focus();
         await delay(200);
+        const muteBox = allocation(mute);
+        assert(muteBox.y >= viewport.y && muteBox.y + muteBox.height <= viewport.y + viewport.height,
+            'Keyboard focus did not return the first mute control to view');
         const adjustment = scroll.get_vadjustment
             ? scroll.get_vadjustment() : scroll.get_vscroll_bar().get_adjustment();
         adjustment.value = 0;

@@ -1,5 +1,5 @@
 Name:           shure-mv7
-Version:        0.3.3
+Version:        0.3.4
 Release:        1%{?dist}
 Summary:        Unofficial Linux web console for the Shure MV7+ microphone
 %global debug_package %{nil}
@@ -87,6 +87,10 @@ go test ./...
 %udev_preun
 
 %changelog
+* Mon Sep 14 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.4-1
+- Put hardware mute above the live meter and gain controls in both GNOME clients
+- Include full-size themed panel microphone icons and refreshed screenshots
+
 * Mon Sep 14 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.3-1
 - Keep Shell meter and panel allocations stable across changing readings
 - Add native app and Shell screenshots to the documentation

@@ -120,8 +120,7 @@ class MV7Application extends Adw.Application {
             title: 'Microphone status and input level',
             child: liveContent, activatable: false, selectable: false,
         });
-        this._liveGroup = new Adw.PreferencesGroup({title: 'Live input'});
-        this._liveGroup.add(this._liveRow);
+        this._liveGroup = new Adw.PreferencesGroup({title: 'Microphone'});
         this._livePage = new Adw.PreferencesPage({vexpand: false});
         this._livePage.add(this._liveGroup);
         layout.append(this._livePage);
@@ -137,6 +136,10 @@ class MV7Application extends Adw.Application {
             this._stack.add_titled_with_icon(widget, page.id, page.title, page.icon);
         }
         for (const control of CONTROLS) {
+            if (control.field === 'muted') {
+                this._addControl(this._liveGroup, control);
+                continue;
+            }
             const key = `${control.page}/${control.group}`;
             if (!groups.has(key)) {
                 const group = new Adw.PreferencesGroup({title: control.group});
@@ -145,6 +148,7 @@ class MV7Application extends Adw.Application {
             }
             this._addControl(groups.get(key), control);
         }
+        this._liveGroup.add(this._liveRow);
         this._buildConnectionPage();
         this._applySnapshot(this._snapshot);
         this._window.present();

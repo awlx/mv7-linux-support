@@ -8,9 +8,9 @@ export const PAGES = [
 
 export const CONTROLS = [
     {page: 'audio', group: 'Microphone', field: 'muted', action: 'set_mute', title: 'Mute microphone', kind: 'switch'},
-    {page: 'audio', group: 'Microphone', field: 'auto_level', action: 'set_auto_level', title: 'Auto Level', subtitle: 'Turn off to adjust gain manually.', kind: 'switch'},
-    {page: 'audio', group: 'Microphone', field: 'gain_db', action: 'set_gain', title: 'Gain', subtitle: 'Manual input gain, in decibels.', kind: 'range', min: 0, max: 36, step: 0.5},
-    {page: 'audio', group: 'Microphone', field: 'gain_locked', action: 'set_gain_locked', title: 'Gain lock', kind: 'switch'},
+    {page: 'audio', group: 'Gain controls', field: 'auto_level', action: 'set_auto_level', title: 'Auto Level', subtitle: 'Turn off to adjust gain manually.', kind: 'switch'},
+    {page: 'audio', group: 'Gain controls', field: 'gain_db', action: 'set_gain', title: 'Gain', subtitle: 'Manual input gain, in decibels.', kind: 'range', min: 0, max: 36, step: 0.5},
+    {page: 'audio', group: 'Gain controls', field: 'gain_locked', action: 'set_gain_locked', title: 'Gain lock', kind: 'switch'},
     {page: 'audio', group: 'Processing', field: 'hpf', action: 'set_hpf', title: 'High-pass filter', kind: 'choice', options: ['Off', '75 Hz', '150 Hz']},
     {page: 'audio', group: 'Processing', field: 'limiter', action: 'set_limiter', title: 'Limiter', kind: 'switch'},
     {page: 'audio', group: 'Processing', field: 'compressor', action: 'set_compressor', title: 'Compressor', kind: 'choice', options: ['Off', 'Light', 'Medium', 'Heavy']},

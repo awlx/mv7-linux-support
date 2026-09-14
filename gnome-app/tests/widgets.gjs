@@ -109,20 +109,61 @@ async function checkWidgets() {
     const connected = {connection: 'connected', state, error: null};
     app._applySnapshot(connected);
     await pause(350);
+    const mute = app._bindings.find(binding => binding.control.field === 'muted');
+    const auto = app._bindings.find(binding => binding.control.field === 'auto_level');
+    const gain = app._bindings.find(binding => binding.control.field === 'gain_db');
+    const lock = app._bindings.find(binding => binding.control.field === 'gain_locked');
+    assert(app._bindings.filter(binding => binding.control.field === 'muted').length === 1,
+        'Hardware mute must appear exactly once');
+    assert(mute.row.get_next_sibling() === app._liveRow,
+        'Mute must be the first row immediately above live input');
+    assert(auto.row.get_next_sibling() === gain.row && gain.row.get_next_sibling() === lock.row,
+        'Auto Level, manual gain and gain lock must stay together in order');
     const widths = new Set();
-    for (const width of [520, 1100, 780]) {
-        app._window.set_default_size(width, 820);
+    const allocations = [];
+    for (const [width, height] of [[520, 600], [1100, 820], [780, 820]]) {
+        app._window.set_default_size(width, height);
         await pause(150);
         widths.add(app._window.get_width());
-        const settingsCard = app._bindings.find(binding => binding.row.get_mapped()).row.get_parent();
+        const settingsCard = gain.row.get_parent();
         const [liveValid, liveBounds] = app._liveRow.get_parent().compute_bounds(app._window);
         const [settingsValid, settingsBounds] = settingsCard.compute_bounds(app._window);
         assert(liveValid && settingsValid &&
             Math.abs(liveBounds.get_x() - settingsBounds.get_x()) < 1 &&
             Math.abs(liveBounds.get_width() - settingsBounds.get_width()) < 1,
             `Live card must match settings width and alignment at window width ${app._window.get_width()}`);
+        const [, muteBounds] = mute.row.compute_bounds(app._window);
+        const [, meterBounds] = app._liveRow.compute_bounds(app._window);
+        const [, autoBounds] = auto.row.compute_bounds(app._window);
+        assert(muteBounds.get_y() + muteBounds.get_height() <= meterBounds.get_y() &&
+            meterBounds.get_y() + meterBounds.get_height() <= autoBounds.get_y(),
+            'Actual native allocation must be Mute, live input, then gain controls');
+        allocations.push({
+            width: app._window.get_width(), height: app._window.get_height(),
+            scale: app._window.get_scale_factor(),
+            muteY: muteBounds.get_y(), liveY: meterBounds.get_y(), gainGroupY: autoBounds.get_y(),
+            liveWidth: liveBounds.get_width(), settingsWidth: settingsBounds.get_width(),
+        });
+        mute.widgets[0].grab_focus();
+        for (let step = 0; step < 4 && app._window.get_focus() !== auto.widgets[0]; step++) {
+            assert(app._window.child_focus(Gtk.DirectionType.TAB_FORWARD), 'Tab navigation from mute failed');
+            const focus = app._window.get_focus();
+            assert(focus === app._liveRow || focus === auto.row || focus === auto.widgets[0],
+                `Tab must pass the readable live card before Auto Level: ${focus}`);
+        }
+        assert(app._window.get_focus() === auto.widgets[0], 'Auto Level must remain keyboard accessible');
+        const last = app._bindings.find(binding => binding.control.field === 'mute_btn_active');
+        last.row.grab_focus();
+        await pause(200);
+        const [, lastBounds] = last.row.compute_bounds(app._window);
+        assert(lastBounds.get_y() >= autoBounds.get_y() &&
+            lastBounds.get_y() + lastBounds.get_height() <= app._window.get_height() + 1,
+            `Keyboard focus must scroll the last Audio control into view: last=${lastBounds.get_y()},${lastBounds.get_height()}, auto=${autoBounds.get_y()}, window=${app._window.get_height()}`);
+        auto.widgets[0].grab_focus();
+        await pause(200);
     }
     assert(widths.size >= 2, 'Card alignment must be checked at different actual window widths');
+    print(`Native control allocations: ${JSON.stringify(allocations)}`);
     assert(app._meterDrawing.get_width() === app._meterBar.get_width() &&
         app._meterDrawing.get_height() === app._meterBar.get_height() &&
         app._meterDrawing.get_height() > 0, 'The drawing overlay must cover the real GTK meter allocation');
@@ -163,7 +204,6 @@ async function checkWidgets() {
     app._settings.set_boolean('meter-enabled', true);
     await pause(50);
 
-    const mute = app._bindings.find(binding => binding.control.field === 'muted');
     mute.widgets[0].active = true;
     await pause(350);
     assert(sent.length === 1 && sent[0].action === 'set_mute' && sent[0].params.value === true,
@@ -172,7 +212,6 @@ async function checkWidgets() {
     app._applySnapshot({...connected, state: {...state, muted: true}});
     assert(app._statusTitle.label === 'Microphone muted', 'Confirmed mute must update the status');
 
-    const gain = app._bindings.find(binding => binding.control.field === 'gain_db');
     gain.widgets[1].set_value(13);
     gain.widgets[1].set_value(13.5);
     gain.widgets[1].set_value(14);
@@ -213,6 +252,30 @@ async function checkWidgets() {
     app._stopClient();
     assert(stopped && app._pending.size === 0, 'Shutdown must close client and remove timers');
     assert(app._peakTimer === 0 && app._heldPeak === null, 'Shutdown must remove peak animation and history');
+    const screenshot = GLib.getenv('MV7_WIDGET_SCREENSHOT');
+    if (screenshot) {
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_DARK);
+        app._window.set_default_size(770, 1290);
+        app._applySnapshot({...connected, state: {...state, gain_db: 24, hpf: 1, limiter: true,
+            compressor: 1, denoiser: true, popper_stopper: true, tone: 0,
+            mic_mix: 20, playback_mix: 80, mute_btn_active: true}});
+        auto.widgets[0].grab_focus();
+        // Let the reset-confirmation toast expire before capturing the normal controls.
+        await pause(6000);
+        app._applyMeter({available: true, peak_dbfs: -3, rms_dbfs: -21, clipping: false});
+        app._applyMeter({available: true, peak_dbfs: -12, rms_dbfs: -21, clipping: false});
+        await pause(150);
+        const last = app._bindings.find(binding => binding.control.field === 'mute_btn_active');
+        const [, lastBounds] = last.row.compute_bounds(app._window);
+        assert(lastBounds.get_y() + lastBounds.get_height() <= app._window.get_height(),
+            'Screenshot must include the complete Audio page');
+        const paintable = Gtk.WidgetPaintable.new(app._window);
+        const snapshot = Gtk.Snapshot.new();
+        paintable.snapshot(snapshot, app._window.get_width(), app._window.get_height());
+        const texture = app._window.get_renderer().render_texture(snapshot.to_node(), null);
+        assert(texture.save_to_png(screenshot), 'Could not save native screenshot');
+        print(`Native screenshot: ${texture.get_width()}x${texture.get_height()}`);
+    }
     print('Native GTK widget checks passed (mocked connection; no hardware commands).');
 }
 
