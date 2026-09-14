@@ -33,12 +33,17 @@ class IconBox extends St.Widget {
 
     vfunc_get_preferred_width(_forHeight) {
         const size = this._iconSize();
-        return this._icon.get_theme_node().adjust_preferred_width(size, size);
+        const widths = this._icon.get_theme_node().adjust_preferred_width(size, size);
+        // Clutter subtracts actor margins during allocate(); theme-node sizing excludes them.
+        const margin = this._icon.margin_left + this._icon.margin_right;
+        return widths.map(width => width + margin);
     }
 
     vfunc_get_preferred_height(_forWidth) {
         const size = this._iconSize();
-        return this._icon.get_theme_node().adjust_preferred_height(size, size);
+        const heights = this._icon.get_theme_node().adjust_preferred_height(size, size);
+        const margin = this._icon.margin_top + this._icon.margin_bottom;
+        return heights.map(height => height + margin);
     }
 
     vfunc_allocate(box) {
@@ -47,8 +52,10 @@ class IconBox extends St.Widget {
             x1: 0, y1: 0, x2: box.get_width(), y2: box.get_height(),
         });
         this._icon.allocate(local);
-        // Apply the icon's themed padding once, rather than styling the drawing as an icon.
-        this._drawing.allocate(this._icon.get_theme_node().get_content_box(local));
+        const iconBox = this._icon.get_allocation_box();
+        const content = this._icon.get_theme_node().get_content_box(iconBox);
+        content.set_origin(content.x1 + iconBox.x1, content.y1 + iconBox.y1);
+        this._drawing.allocate(content);
     }
 });
 

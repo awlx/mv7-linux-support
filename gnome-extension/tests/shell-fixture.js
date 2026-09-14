@@ -1,8 +1,11 @@
 // Loaded as extension.js by shell-layout.sh, beside the staged implementation.
+import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import MV7Extension from './implementation.js';
 import {demoState, run} from './tests/shell-layout.js';
+import {run as runIcons} from './tests/shell-icons.js';
 
 class FixtureIndicator extends MV7Extension {
     _connect() {
@@ -12,11 +15,20 @@ class FixtureIndicator extends MV7Extension {
 
 export default class LayoutFixture extends Extension {
     enable() {
+        const theme = GLib.getenv('MV7_LAYOUT_THEME');
+        if (theme) {
+            const file = Gio.File.new_for_path(theme);
+            if (!file.query_exists(null))
+                throw new Error(`Layout test theme not found: ${theme}`);
+            Main.setThemeStylesheet(theme);
+            Main.loadTheme();
+        }
         this._indicator = new FixtureIndicator(this.metadata);
         this._indicator.enable();
         this._start = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 1500, () => {
             this._start = 0;
-            run(this._indicator).then(result => {
+            const test = GLib.getenv('MV7_SHELL_ICON_TEST') === '1' ? runIcons : run;
+            test(this._indicator).then(result => {
                 GLib.file_set_contents(GLib.getenv('MV7_LAYOUT_RESULT'), JSON.stringify(result, null, 2));
                 global.context.terminate();
             }).catch(error => {

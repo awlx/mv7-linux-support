@@ -36,6 +36,10 @@ timeout 150s dbus-run-session -- bash -c '
   gsettings set org.gnome.shell enabled-extensions "[\"shure-mv7plus@shure-mv7.local\"]"
   gsettings set org.gnome.shell disable-user-extensions false
   gsettings set org.gnome.desktop.interface enable-animations false
+  gsettings set org.gnome.desktop.interface scaling-factor "${MV7_LAYOUT_SCALE:-1}"
+  if [[ -n "${MV7_LAYOUT_ICON_THEME:-}" ]]; then
+    gsettings set org.gnome.desktop.interface icon-theme "${MV7_LAYOUT_ICON_THEME}"
+  fi
   gsettings set org.gnome.desktop.session idle-delay 0
   gnome-shell --headless --wayland --no-x11 --virtual-monitor "${MV7_LAYOUT_MONITOR:-1280x900}"
 ' > "${temporary}/shell.log" 2>&1 || result=$?

@@ -268,6 +268,13 @@ GNOME Shell installed; it starts a private D-Bus session and does not use audio:
 MV7_SHELL_LAYOUT_TEST=1 bash gnome-extension/tests/shell-layout.sh
 ```
 
+Add `MV7_SHELL_ICON_TEST=1` to compare painted icon size and position against
+a stock Shell status icon, including mute, connection changes, and themed
+padding. `MV7_LAYOUT_SCALE=2` selects desktop scaling;
+`MV7_LAYOUT_ICON_THEME` and `MV7_LAYOUT_THEME` optionally select an installed
+icon theme and Shell stylesheet. `MV7_ICON_OUTPUT` saves synthetic panel crops
+to an existing directory.
+
 The web assets in `internal/webui/web` are embedded in the daemon binary.
 Protocol code is in `internal/mv7`; capture and routing details are documented
 in [`internal/meter/doc.go`](internal/meter/doc.go).
