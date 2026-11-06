@@ -37,7 +37,7 @@ and off by default.
 - Linux and a Shure MV7+ connected over USB.
 - Native app: GJS, GTK 4.10+, libadwaita 1.4+, and libsoup 3
   (Ubuntu 24.04+, Debian 13+, or a recent Fedora).
-- Panel extension: GNOME Shell 45-50. The native app also works without Shell.
+- Panel extension: GNOME Shell 45-51. The native app also works without Shell.
 - Live metering: PulseAudio or PipeWire's PulseAudio service, plus
   `pulseaudio-utils`.
 - Building from source: Go 1.26.6 or newer.
@@ -61,7 +61,7 @@ cd mv7-linux-support
 ```bash
 sudo dnf install golang rpm-build desktop-file-utils systemd-rpm-macros glib2
 ./packaging/fedora/build-rpm.sh
-sudo dnf install ./dist/RPMS/shure-mv7-0.3.4-1.*.rpm
+sudo dnf install ./dist/RPMS/shure-mv7-0.3.5-1.*.rpm
 ```
 
 ### Ubuntu / Debian
@@ -69,7 +69,7 @@ sudo dnf install ./dist/RPMS/shure-mv7-0.3.4-1.*.rpm
 ```bash
 sudo apt install golang-go dpkg-dev libglib2.0-bin
 ./packaging/ubuntu/build-deb.sh
-sudo apt install ./dist/DEBS/shure-mv7_0.3.4-1_*.deb
+sudo apt install ./dist/DEBS/shure-mv7_0.3.5-1_*.deb
 ```
 
 If you already have a built package, only the final install command is needed.

@@ -77,7 +77,9 @@ export default class MV7Extension extends Extension {
         this._meterBar = new BarLevel({style_class: 'slider mv7-meter-bar', x_expand: true});
         this._meterBar.overdrive_start = 54 / 60;
         this._meterBar.accessible_name = 'MV7+ input peak level';
-        const meterBox = new St.BoxLayout({vertical: true, x_expand: true});
+        const meterBox = new St.BoxLayout({
+            orientation: Clutter.Orientation.VERTICAL, x_expand: true,
+        });
         meterBox.add_child(this._meterTitle);
         meterBox.add_child(this._meterBar);
         this._meterRow.add_child(meterBox);

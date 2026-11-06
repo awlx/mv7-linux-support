@@ -1,3 +1,10 @@
+shure-mv7 (0.3.5-1) unstable; urgency=medium
+
+  * Add GNOME Shell 51 support by replacing the removed St vertical property
+    with Clutter.Orientation.
+
+ -- Annika Wickert <awlx@users.noreply.github.com>  Fri, 06 Nov 2026 12:00:00 +0000
+
 shure-mv7 (0.3.4-1) unstable; urgency=medium
 
   * Put hardware mute above the live meter and gain controls in both GNOME clients.
