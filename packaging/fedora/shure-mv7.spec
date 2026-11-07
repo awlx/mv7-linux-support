@@ -1,5 +1,5 @@
 Name:           shure-mv7
-Version:        0.3.4
+Version:        0.3.5
 Release:        1%{?dist}
 Summary:        Unofficial Linux web console for the Shure MV7+ microphone
 %global debug_package %{nil}
@@ -80,13 +80,18 @@ go test ./...
 %{_datadir}/icons/hicolor/scalable/apps/io.github.awlx.MV7.svg
 %{_userunitdir}/mv7web.service
 
-%post
-%udev_post
-
-%preun
-%udev_preun
-
+# Fedora ships macros.udev (with %udev_post/%udev_preun) only up to Fedora 42.
+# From Fedora 43 on, udev rule registration is handled by file triggers in the
+# systemd/udev packages; referencing the undefined macros here left literal
+# "%udev_post" lines in the scriptlets, which break the uninstall transaction.
 %changelog
+* Fri Nov 06 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.5-1
+- Add GNOME Shell 51 support by replacing the removed St vertical property
+  with Clutter.Orientation
+- Drop the %post/%preun udev scriptlets: %udev_post/%udev_preun no longer
+  exist on Fedora 43+ and made every package erase fail with "fg: no job
+  control"
+
 * Mon Sep 14 2026 Annika Wickert <awlx@users.noreply.github.com> - 0.3.4-1
 - Put hardware mute above the live meter and gain controls in both GNOME clients
 - Include full-size themed panel microphone icons and refreshed screenshots

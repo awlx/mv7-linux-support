@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 //
 // DaemonClient — a robust, cancellation-safe WebSocket client for the MV7+
-// daemon, intended to run inside a GNOME Shell extension (GNOME 45–50, ESM).
+// daemon, intended to run inside a GNOME Shell extension (GNOME 45–51, ESM).
 //
 // Design goals / invariants:
 //   * Fully asynchronous: libsoup3's async WebSocket API only; no subprocesses,
